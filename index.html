@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Dashboard NH Malang</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tosca-950:#052E2A;
+    --tosca-900:#0A413C;
+    --tosca-800:#0B4F49;
+    --tosca-700:#0E6E62;
+    --tosca-600:#128A7B;
+    --tosca-500:#17A398;
+    --tosca-400:#4FC3B4;
+    --tosca-200:#A9E8DD;
+    --tosca-100:#D6F5EE;
+    --tosca-50:#F1FBF9;
+    --gold-600:#B8842E;
+    --gold-200:#E4CB93;
+    --gold-100:#F6E8CE;
+    --ink:#0C2622;
+    --slate:#547069;
+    --slate-light:#8AA39D;
+    --rose:#B85748;
+    --rose-100:#F6E4E1;
+    --paper:#F6FBFA;
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--paper);}
+  body{
+    font-family:'Manrope',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    margin:0;
+    -webkit-font-smoothing:antialiased;
+  }
+  .tabular{font-variant-numeric:tabular-nums;}
+  .card{
+    background:#fff;
+    border:1px solid var(--tosca-100);
+    border-radius:16px;
+  }
+  .tab-btn{transition:background .18s ease,color .18s ease;color:var(--tosca-800);}
+  .tab-btn.active{background:var(--tosca-600);color:#fff;box-shadow:0 2px 10px -2px rgba(18,138,123,.5);}
+  .tab-btn:not(.active):hover{background:var(--tosca-50);}
+  .fade-in{animation:fadeIn .45s ease both;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  select.tosca-select{border:1px solid var(--tosca-200);border-radius:10px;background:#fff;color:var(--ink);}
+  select.tosca-select:focus{outline:2px solid var(--tosca-400);outline-offset:1px;}
+  .chip{border:1px solid var(--tosca-100);border-radius:999px;}
+  .badge-up{color:var(--tosca-700);background:var(--tosca-50);}
+  .badge-down{color:var(--rose);background:var(--rose-100);}
+  ::-webkit-scrollbar{height:6px;width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--tosca-200);border-radius:4px;}
+  .chart-wrap{position:relative;height:280px;}
+  .kpi-value{font-size:clamp(1.05rem,2.2vw,1.4rem);}
+  :focus-visible{outline:2px solid var(--tosca-500);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="max-w-6xl mx-auto px-4 py-6 md:py-8">
+
+  <!-- HEADER -->
+  <header class="rounded-2xl p-6 md:p-7 mb-5 shadow-sm" style="background:linear-gradient(135deg,var(--tosca-950),var(--tosca-600));">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-white text-2xl md:text-[28px] font-extrabold tracking-tight">DASHBOARD NH MALANG</h1>
+        <p class="text-sm md:text-[15px] mt-1" style="color:var(--tosca-100)">Sistem Informasi &amp; Monitoring Kinerja Terpadu Cabang Malang</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/15 text-white">
+          <span class="w-1.5 h-1.5 rounded-full" style="background:#6EE7B7"></span>
+          <span id="syncLabel">Tersinkronisasi</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/15 text-white">📍 Cabang Malang</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TAB NAV -->
+  <nav class="card p-1.5 mb-5 flex gap-1 overflow-x-auto">
+    <button data-tab="zis" class="tab-btn active flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">ZIS</button>
+    <button data-tab="fr" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">FR</button>
+    <button data-tab="prog" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">PROG</button>
+    <button data-tab="aqiqah" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">AQIQAH</button>
+  </nav>
+
+  <!-- ================= ZIS PANEL ================= -->
+  <section id="panel-zis" class="fade-in">
+
+    <div class="card p-4 mb-5 flex flex-col md:flex-row md:items-center gap-3 md:justify-between">
+      <div class="flex items-center gap-2 text-sm font-semibold" style="color:var(--tosca-800)">
+        <span>⏱️ Tahun Perbandingan Grafik:</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="zisYearSelect" class="tosca-select text-sm px-3 py-2"></select>
+        <span id="zisFilterLabel" class="text-xs font-medium" style="color:var(--slate)"></span>
+      </div>
+    </div>
+
+    <div class="rounded-2xl p-7 md:p-9 mb-5 text-center" style="background:linear-gradient(135deg,var(--tosca-800),var(--tosca-500));">
+      <p class="text-white/85 text-xs font-bold tracking-wide">TOTAL PEROLEHAN ZIS CABANG MALANG</p>
+      <p id="zisHeroTotal" class="tabular text-white font-extrabold my-2" style="font-size:clamp(2rem,6vw,3.2rem);">Rp 0</p>
+      <span id="zisHeroPeriode" class="inline-block text-xs font-semibold text-white px-4 py-1.5 rounded-full bg-white/15"></span>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div class="card p-4" style="border-top:3px solid var(--tosca-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TAHUN BERJALAN</p>
+        <p id="kpiTahunIniLabel" class="text-[11px] mb-1" style="color:var(--slate-light)"></p>
+        <p id="kpiTahunIni" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--slate-light)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TAHUN LALU</p>
+        <p id="kpiTahunLaluLabel" class="text-[11px] mb-1" style="color:var(--slate-light)"></p>
+        <p id="kpiTahunLalu" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--gold-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TARGET (DOA) 2026</p>
+        <p id="kpiTargetSub" class="text-[11px] mb-1" style="color:var(--slate-light)"></p>
+        <p id="kpiTarget" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--tosca-400)">
+        <p class="text-xs font-bold" style="color:var(--slate)">RATA² PERTUMBUHAN YoY</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">vs bulan sama tahun lalu</p>
+        <p id="kpiGrowth" class="tabular kpi-value font-extrabold">0%</p>
+      </div>
+    </div>
+
+    <div class="card p-5 mb-5">
+      <h3 class="font-bold text-base">Tren Perolehan ZIS Per Bulan</h3>
+      <p id="zisTrenSub" class="text-xs mb-3" style="color:var(--slate)"></p>
+      <div class="chart-wrap"><canvas id="chartZisBulanan"></canvas></div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="card p-5">
+        <h3 class="font-bold text-base">Perolehan ZIS Per Tahun (2018–2026)</h3>
+        <p class="text-xs mb-3" style="color:var(--slate)">Total tahunan, 2026 berjalan sampai bulan terakhir yang terisi</p>
+        <div class="chart-wrap"><canvas id="chartZisTahunan"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-bold text-base">Realisasi vs Target (Doa) 2026</h3>
+        <p class="text-xs mb-3" style="color:var(--slate)">Perbandingan capaian bulanan terhadap target</p>
+        <div class="chart-wrap"><canvas id="chartZisTarget"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FR PANEL ================= -->
+  <section id="panel-fr" class="hidden fade-in">
+
+    <div class="card p-4 mb-5 flex flex-col md:flex-row md:items-center gap-3 md:justify-between">
+      <div class="flex items-center gap-2 text-sm font-semibold" style="color:var(--tosca-800)">
+        <span>🔍 Filter Fundraiser:</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="frNamaSelect" class="tosca-select text-sm px-3 py-2"></select>
+        <select id="frBulanSelect" class="tosca-select text-sm px-3 py-2"></select>
+      </div>
+    </div>
+
+    <div class="rounded-2xl p-7 md:p-9 mb-5 text-center" style="background:linear-gradient(135deg,var(--tosca-800),var(--tosca-500));">
+      <p id="frHeroLabel" class="text-white/85 text-xs font-bold tracking-wide">TOTAL PEROLEHAN FUNDRAISER TERPILIH</p>
+      <p id="frHeroTotal" class="tabular text-white font-extrabold my-2" style="font-size:clamp(2rem,6vw,3.2rem);">Rp 0</p>
+      <span id="frHeroPeriode" class="inline-block text-xs font-semibold text-white px-4 py-1.5 rounded-full bg-white/15"></span>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div class="card p-4" style="border-top:3px solid var(--tosca-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TARGET (DOA)</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">bulan berjalan</p>
+        <p id="frKpiTarget" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--slate-light)">
+        <p class="text-xs font-bold" style="color:var(--slate)">REALISASI</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">bulan berjalan</p>
+        <p id="frKpiRealisasi" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--gold-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">CAPAIAN</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">realisasi/target</p>
+        <p id="frKpiPersen" class="tabular kpi-value font-extrabold">0%</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--tosca-400)">
+        <p class="text-xs font-bold" style="color:var(--slate)">PERINGKAT</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">dari 9 fundraiser</p>
+        <p id="frKpiRank" class="tabular kpi-value font-extrabold">–</p>
+      </div>
+    </div>
+
+    <div class="card p-5 mb-5">
+      <h3 class="font-bold text-base">Tren Target vs Realisasi Per Bulan</h3>
+      <p id="frTrenSub" class="text-xs mb-3" style="color:var(--slate)"></p>
+      <div class="chart-wrap"><canvas id="chartFrTren"></canvas></div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-base">Perbandingan Antar Fundraiser</h3>
+      <p id="frBandingSub" class="text-xs mb-3" style="color:var(--slate)">Diurutkan dari capaian % tertinggi</p>
+      <div class="chart-wrap" style="height:320px;"><canvas id="chartFrBanding"></canvas></div>
+    </div>
+
+    <p class="text-xs mt-4 text-center" style="color:var(--slate-light)">
+      Data ditarik dari sheet "Dashboard Fundraiser". Otomatisasi WA mingguan (Sabtu) mengirim progres masing-masing ke nomor pribadi tiap fundraiser.
+    </p>
+  </section>
+
+  <!-- ================= PROG PANEL ================= -->
+  <section id="panel-prog" class="hidden fade-in">
+    <div class="rounded-2xl p-10 text-center" style="background:linear-gradient(135deg,var(--tosca-50),var(--tosca-100));border:1px solid var(--tosca-100);">
+      <p class="text-4xl mb-2">🎯</p>
+      <h3 class="font-extrabold text-lg mb-2" style="color:var(--tosca-900)">Dashboard Kinerja Program Malang</h3>
+      <p class="max-w-md mx-auto text-sm" style="color:var(--slate)">
+        Halaman siap pakai untuk integrasi data penyaluran manfaat, program dakwah, sosial, pendidikan, dan kebencanaan Cabang Malang.
+        Ada blok <strong>LABA USAHA</strong> di sheet yang mungkin relevan untuk tab ini — konfirmasi dulu sebelum saya sambungkan.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= AQIQAH PANEL ================= -->
+  <section id="panel-aqiqah" class="hidden fade-in">
+    <div class="rounded-2xl p-7 md:p-9 mb-5 text-center" style="background:linear-gradient(135deg,var(--tosca-800),var(--tosca-500));">
+      <p class="text-white/85 text-xs font-bold tracking-wide">TOTAL LAYANAN AQIQAH CABANG MALANG</p>
+      <p id="aqHeroTotal" class="tabular text-white font-extrabold my-2" style="font-size:clamp(2rem,6vw,3.2rem);">0</p>
+      <span id="aqHeroPeriode" class="inline-block text-xs font-semibold text-white px-4 py-1.5 rounded-full bg-white/15"></span>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div class="card p-4" style="border-top:3px solid var(--tosca-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TAHUN BERJALAN</p>
+        <p id="aqKpiTahunIniLabel" class="text-[11px] mb-1" style="color:var(--slate-light)"></p>
+        <p id="aqKpiTahunIni" class="tabular kpi-value font-extrabold">0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--slate-light)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TAHUN LALU</p>
+        <p id="aqKpiTahunLaluLabel" class="text-[11px] mb-1" style="color:var(--slate-light)"></p>
+        <p id="aqKpiTahunLalu" class="tabular kpi-value font-extrabold">0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--gold-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">RATA² / BULAN</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">tahun berjalan</p>
+        <p id="aqKpiRata" class="tabular kpi-value font-extrabold">0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--tosca-400)">
+        <p class="text-xs font-bold" style="color:var(--slate)">KENAIKAN</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">vs tahun lalu</p>
+        <p id="aqKpiKenaikan" class="tabular kpi-value font-extrabold">0</p>
+      </div>
+    </div>
+
+    <div class="card p-5 mb-5">
+      <h3 class="font-bold text-base">Tren Layanan Aqiqah Per Bulan</h3>
+      <p id="aqTrenSub" class="text-xs mb-3" style="color:var(--slate)"></p>
+      <div class="chart-wrap"><canvas id="chartAqBulanan"></canvas></div>
+    </div>
+
+    <div class="card p-5">
+      <h3 class="font-bold text-base">Layanan Aqiqah Per Tahun (2018–2026)</h3>
+      <p class="text-xs mb-3" style="color:var(--slate)">Jumlah paket aqiqah per tahun</p>
+      <div class="chart-wrap"><canvas id="chartAqTahunan"></canvas></div>
+    </div>
+  </section>
+
+  <footer class="text-center text-xs mt-8 pb-2" style="color:var(--slate)">
+    DASHBOARD NH MALANG · Terhubung Langsung ke Google Spreadsheet
+  </footer>
+</div>
+
+<script>
+/* ============ DATA FALLBACK (hasil tarikan terakhir dari sheet "Dashboard NH Malang") ============ */
+const BULAN_SINGKAT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const BULAN_PANJANG = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+const ZIS_FALLBACK = {
+  tahunan: [
+    {tahun:2018, bulanan:[446463369,413561692,455421894,453469189,529539356,611276320,458927359,762548893,431916636,545671172,482057295,456797092], total:6047650267, kenaikan:null},
+    {tahun:2019, bulanan:[470489688,469081093,543145944,593139949,1001652171,602075264,509491954,789713660,579443834,591162871,517371886,582078959], total:7248847273, kenaikan:1201197006},
+    {tahun:2020, bulanan:[598511705,607428400,538308540,598273540,973272203,500440922,558203077,1025055620,627471795,564661583,551027381,560770356], total:7703425122, kenaikan:454577849},
+    {tahun:2021, bulanan:[563819040,521004999,533297032,654601264,858817129,524126203,1028535066,539756882,547763990,647190780,565758991,1252348241], total:8237019617, kenaikan:533594495},
+    {tahun:2022, bulanan:[624082100,530059652,508181080,1022613576,474878089,447626924,910954499,448296330,461645191,426137785,526582448,490774134], total:6871831808, kenaikan:-1365187808},
+    {tahun:2023, bulanan:[422130669,410075334,500856752,787807713,399979788,406503177,822502087,1189298119,426271398,451329002,548241617,403465288], total:6843831808, kenaikan:-28000000},
+    {tahun:2024, bulanan:[414945361,427025575,615598826,686843574,394416803,808162158,407420695,378850436,364306932,400130509,380937812,1189080883], total:6467719563, kenaikan:-376112246},
+    {tahun:2025, bulanan:[398632439,378991580,944414528,356369314,374007103,787560380,447413730,400348544,443685115,382846566,387813418,603747143], total:5905829859, kenaikan:-561889704},
+    {tahun:2026, bulanan:[381212524,616669228,774859586,427680003,791910016,337317857,480907867,438817270,100600779,null,null,null], total:4349975131, kenaikan:-1555854728}
+  ],
+  target2026:{
+    bulanan:[438495683,416890738,1038855981,392006245,411407813,866316418,492155103,440383399,488053626,421131223,426594760,664121857],
+    total:6496412845
+  }
+};
+
+const AQIQAH_FALLBACK = {
+  tahunan:[
+    {tahun:2018, bulanan:[156,141,185,145,128,88,175,174,173,103,142,220], total:1830, kenaikan:null},
+    {tahun:2019, bulanan:[190,103,147,150,89,130,159,142,177,138,178,243], total:1846, kenaikan:16},
+    {tahun:2020, bulanan:[180,126,112,56,88,121,177,192,165,174,203,217], total:1811, kenaikan:-35},
+    {tahun:2021, bulanan:[166,151,170,161,143,203,157,146,147,209,176,242], total:2071, kenaikan:260},
+    {tahun:2022, bulanan:[149,122,167,118,149,144,202,113,156,182,133,164], total:1799, kenaikan:-272},
+    {tahun:2023, bulanan:[113,99,96,89,134,157,149,113,107,116,87,140], total:1400, kenaikan:-399},
+    {tahun:2024, bulanan:[104,84,65,85,137,133,133,110,111,136,120,128], total:1346, kenaikan:-54},
+    {tahun:2025, bulanan:[111,68,46,99,81,133,90,91,87,113,87,121], total:1127, kenaikan:-219},
+    {tahun:2026, bulanan:[116,94,67,115,125,161,112,91,null,null,null,null], total:881, kenaikan:-246}
+  ]
+};
+
+const FR_NAMA = ['AHMAD FATHONI MUBAROK','TONY SANTOSO','HANIF MAHZUNI','DWI HARIANTO','HERDIAWAN DEDIK PRASETYO',"ABDUL A'LA",'MUHAMMAD ZAINAL MUSLIM','ABDULLAH YUSUF','MOCHAMMAD SAIFU NAFI'];
+
+// Sama persis bentuknya dengan JSON yang dikembalikan getFundraiserData() di Code.gs,
+// supaya begitu APPS_SCRIPT_URL diisi, data live langsung "pas" tanpa ubah kode render.
+const FR_FALLBACK = {
+  bulanTersedia: ['JANUARI','FEBRUARI','MARET','APRIL','MEI'],
+  bulanIni: 'MEI',
+  perBulan: {
+    JANUARI: [
+      {nama:'AHMAD FATHONI MUBAROK', target:43768201, realisasi:40368511, persen:92.23},
+      {nama:'TONY SANTOSO', target:43492648, realisasi:42583000, persen:97.91},
+      {nama:'HANIF MAHZUNI', target:39900532, realisasi:35875106, persen:89.91},
+      {nama:'DWI HARIANTO', target:33894633, realisasi:31024022, persen:91.53},
+      {nama:'HERDIAWAN DEDIK PRASETYO', target:48276949, realisasi:49401000, persen:102.33},
+      {nama:"ABDUL A'LA", target:39143597, realisasi:37146066, persen:94.90},
+      {nama:'MUHAMMAD ZAINAL MUSLIM', target:31484936, realisasi:22977106, persen:72.98},
+      {nama:'ABDULLAH YUSUF', target:30000000, realisasi:16405547, persen:54.69},
+      {nama:'MOCHAMMAD SAIFU NAFI', target:66723364, realisasi:48798013, persen:73.13}
+    ],
+    FEBRUARI: [
+      {nama:'AHMAD FATHONI MUBAROK', target:87536402, realisasi:137494031, persen:157.07},
+      {nama:'TONY SANTOSO', target:86985297, realisasi:43999047, persen:50.58},
+      {nama:'HANIF MAHZUNI', target:79801064, realisasi:34603479, persen:43.36},
+      {nama:'DWI HARIANTO', target:63269981, realisasi:30809146, persen:48.69},
+      {nama:'HERDIAWAN DEDIK PRASETYO', target:96553898, realisasi:50972016, persen:52.79},
+      {nama:"ABDUL A'LA", target:78287194, realisasi:46336747, persen:59.19},
+      {nama:'MUHAMMAD ZAINAL MUSLIM', target:58771880, realisasi:31317132, persen:53.29},
+      {nama:'ABDULLAH YUSUF', target:31921580, realisasi:14017193, persen:43.91},
+      {nama:'MOCHAMMAD SAIFU NAFI', target:133446728, realisasi:118481602, persen:88.79}
+    ],
+    MARET: [
+      {nama:'AHMAD FATHONI MUBAROK', target:87536402, realisasi:50284462, persen:57.44},
+      {nama:'TONY SANTOSO', target:86985297, realisasi:73707000, persen:84.74},
+      {nama:'HANIF MAHZUNI', target:79801064, realisasi:92922976, persen:116.44},
+      {nama:'DWI HARIANTO', target:63269981, realisasi:40301475, persen:63.70},
+      {nama:'HERDIAWAN DEDIK PRASETYO', target:96553898, realisasi:74246382, persen:76.90},
+      {nama:"ABDUL A'LA", target:78287194, realisasi:63665988, persen:81.32},
+      {nama:'MUHAMMAD ZAINAL MUSLIM', target:50000000, realisasi:82533543, persen:165.07},
+      {nama:'ABDULLAH YUSUF', target:50000000, realisasi:38034624, persen:76.07},
+      {nama:'MOCHAMMAD SAIFU NAFI', target:133446728, realisasi:146423275, persen:109.72}
+    ],
+    APRIL: [
+      {nama:'AHMAD FATHONI MUBAROK', target:43768824, realisasi:38508134, persen:87.98},
+      {nama:'TONY SANTOSO', target:43493267, realisasi:42086847, persen:96.77},
+      {nama:'HANIF MAHZUNI', target:39901100, realisasi:48215729, persen:120.84},
+      {nama:'DWI HARIANTO', target:33895115, realisasi:27500000, persen:81.13},
+      {nama:'HERDIAWAN DEDIK PRASETYO', target:48277636, realisasi:42392000, persen:87.81},
+      {nama:"ABDUL A'LA", target:39144154, realisasi:33615066, persen:85.88},
+      {nama:'MUHAMMAD ZAINAL MUSLIM', target:31485384, realisasi:23711424, persen:75.31},
+      {nama:'ABDULLAH YUSUF', target:30000000, realisasi:31605124, persen:105.35},
+      {nama:'MOCHAMMAD SAIFU NAFI', target:66724314, realisasi:101743072, persen:152.48}
+    ],
+    MEI: [
+      {nama:'AHMAD FATHONI MUBAROK', target:87536402, realisasi:56638803, persen:64.70},
+      {nama:'TONY SANTOSO', target:86985297, realisasi:69578300, persen:79.99},
+      {nama:'HANIF MAHZUNI', target:79801064, realisasi:127758277, persen:160.10},
+      {nama:'DWI HARIANTO', target:63269981, realisasi:35607000, persen:56.28},
+      {nama:'HERDIAWAN DEDIK PRASETYO', target:96553898, realisasi:68432000, persen:70.87},
+      {nama:"ABDUL A'LA", target:78287194, realisasi:62026158, persen:79.23},
+      {nama:'MUHAMMAD ZAINAL MUSLIM', target:31485384, realisasi:34570226, persen:109.80},
+      {nama:'ABDULLAH YUSUF', target:31921580, realisasi:24330099, persen:76.22},
+      {nama:'MOCHAMMAD SAIFU NAFI', target:133446728, realisasi:187966084, persen:140.85}
+    ]
+  }
+};
+
+/* ============ GANTI DENGAN URL WEB APP APPS SCRIPT SETELAH DEPLOY (lihat Code.gs) ============ */
+const APPS_SCRIPT_URL = ""; // contoh: "https://script.google.com/macros/s/XXXXXXXXXXXX/exec"
+
+let ZIS_DATA = ZIS_FALLBACK;
+let AQIQAH_DATA = AQIQAH_FALLBACK;
+let FR_DATA = FR_FALLBACK;
+let zisCharts = [];
+let aqCharts = [];
+let frCharts = [];
+
+function formatRp(n){
+  if(n===null||n===undefined||n==='') return '–';
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function formatNum(n){
+  if(n===null||n===undefined||n==='') return '–';
+  return Math.round(n).toLocaleString('id-ID');
+}
+function isiBulanTerakhir(arr){
+  let idx = -1;
+  arr.forEach((v,i)=>{ if(v!==null && v!==undefined) idx=i; });
+  return idx;
+}
+function animateValue(el, end, formatter, isRupiah){
+  const start = 0;
+  const dur = 700;
+  const t0 = performance.now();
+  function step(t){
+    const p = Math.min((t - t0)/dur, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    const val = start + (end-start)*eased;
+    el.textContent = formatter(val);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ============ TAB SWITCHING ============ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('[id^="panel-"]').forEach(p=>p.classList.add('hidden'));
+    const panel = document.getElementById('panel-'+btn.dataset.tab);
+    panel.classList.remove('hidden');
+    panel.classList.remove('fade-in'); void panel.offsetWidth; panel.classList.add('fade-in');
+  });
+});
+
+/* ============ CHART OPTIONS ============ */
+function chartOptions(kind, showLegend){
+  return {
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:!!showLegend, position:'top', align:'end', labels:{boxWidth:12, font:{family:'Manrope', weight:'600', size:11}} },
+      tooltip:{
+        callbacks:{
+          label: ctx => ' ' + ctx.dataset.label + ': ' + (kind==='rupiah'? formatRp(ctx.parsed.y) : formatNum(ctx.parsed.y))
+        }
+      }
+    },
+    scales:{
+      y:{ ticks:{ callback:v=> kind==='rupiah' ? (v/1000000).toLocaleString('id-ID')+' Jt' : formatNum(v), font:{family:'Manrope', size:11} }, grid:{color:'#EAF6F3'} },
+      x:{ grid:{display:false}, ticks:{font:{family:'Manrope', size:11}} }
+    }
+  };
+}
+function destroyCharts(arr){ arr.forEach(c=>c && c.destroy()); return []; }
+
+/* ============ RENDER ZIS ============ */
+function populateYearSelect(){
+  const sel = document.getElementById('zisYearSelect');
+  sel.innerHTML = '';
+  ZIS_DATA.tahunan.slice().reverse().forEach(t=>{
+    const opt = document.createElement('option');
+    opt.value = t.tahun; opt.textContent = t.tahun;
+    sel.appendChild(opt);
+  });
+  sel.value = ZIS_DATA.tahunan[ZIS_DATA.tahunan.length-1].tahun;
+  sel.addEventListener('change', renderZis);
+}
+
+function renderZis(){
+  const tahunList = ZIS_DATA.tahunan;
+  const selectedYear = parseInt(document.getElementById('zisYearSelect').value);
+  const idxSel = tahunList.findIndex(t=>t.tahun===selectedYear);
+  const tahunIni = tahunList[idxSel];
+  const tahunLalu = tahunList[idxSel-1] || null;
+  const target = ZIS_DATA.target2026;
+  const lastIdx = isiBulanTerakhir(tahunIni.bulanan);
+
+  document.getElementById('zisFilterLabel').textContent = `Menampilkan tren ${tahunIni.tahun}`;
+  animateValue(document.getElementById('zisHeroTotal'), tahunIni.total, formatRp);
+  document.getElementById('zisHeroPeriode').textContent = lastIdx>=0
+    ? `Periode: Januari – ${BULAN_PANJANG[lastIdx]} ${tahunIni.tahun}`
+    : `Periode: ${tahunIni.tahun}`;
+
+  document.getElementById('kpiTahunIniLabel').textContent = tahunIni.tahun;
+  document.getElementById('kpiTahunIni').textContent = formatRp(tahunIni.total);
+
+  document.getElementById('kpiTahunLaluLabel').textContent = tahunLalu ? tahunLalu.tahun : '–';
+  document.getElementById('kpiTahunLalu').textContent = tahunLalu ? formatRp(tahunLalu.total) : '–';
+
+  document.getElementById('kpiTarget').textContent = formatRp(target.total);
+  const pctTarget = target.total ? (tahunIni.total/target.total*100).toFixed(1) : '0';
+  document.getElementById('kpiTargetSub').textContent = tahunIni.tahun===2026 ? pctTarget+'% dari target tahunan' : 'Target tersedia utk 2026';
+
+  if(tahunLalu){
+    const rasio = tahunIni.bulanan.map((v,i)=> (v!==null && tahunLalu.bulanan[i]) ? (v/tahunLalu.bulanan[i]*100) : null).filter(v=>v!==null);
+    const avg = rasio.length ? rasio.reduce((a,b)=>a+b,0)/rasio.length : 0;
+    document.getElementById('kpiGrowth').textContent = avg.toFixed(0)+'%';
+  } else {
+    document.getElementById('kpiGrowth').textContent = '–';
+  }
+
+  document.getElementById('zisTrenSub').textContent = `Perolehan bulanan ${tahunIni.tahun} (bulan tanpa data ditampilkan kosong)`;
+
+  zisCharts = destroyCharts(zisCharts);
+
+  zisCharts.push(new Chart(document.getElementById('chartZisBulanan'), {
+    type:'bar',
+    data:{ labels: BULAN_SINGKAT, datasets:[{ label:`Perolehan ${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:6, maxBarThickness:38 }] },
+    options: chartOptions('rupiah', false)
+  }));
+
+  zisCharts.push(new Chart(document.getElementById('chartZisTahunan'), {
+    type:'bar',
+    data:{
+      labels: tahunList.map(t=>t.tahun),
+      datasets:[{ label:'Total per Tahun', data: tahunList.map(t=>t.total),
+        backgroundColor: tahunList.map(t=> t.tahun===selectedYear ? '#B8842E' : '#A9E8DD'), borderRadius:6, maxBarThickness:40 }]
+    },
+    options: chartOptions('rupiah', false)
+  }));
+
+  zisCharts.push(new Chart(document.getElementById('chartZisTarget'), {
+    type:'bar',
+    data:{
+      labels: BULAN_SINGKAT,
+      datasets:[
+        {label:'Realisasi 2026', data: tahunList[tahunList.length-1].bulanan, backgroundColor:'#128A7B', borderRadius:5, maxBarThickness:22},
+        {label:'Target (Doa) 2026', data: target.bulanan, backgroundColor:'#E4CB93', borderRadius:5, maxBarThickness:22}
+      ]
+    },
+    options: chartOptions('rupiah', true)
+  }));
+}
+
+/* ============ RENDER AQIQAH ============ */
+function renderAqiqah(){
+  const tahunList = AQIQAH_DATA.tahunan;
+  const tahunIni = tahunList[tahunList.length-1];
+  const tahunLalu = tahunList[tahunList.length-2];
+  const lastIdx = isiBulanTerakhir(tahunIni.bulanan);
+  const bulanTerisi = tahunIni.bulanan.filter(v=>v!==null);
+
+  animateValue(document.getElementById('aqHeroTotal'), tahunIni.total, formatNum);
+  document.getElementById('aqHeroPeriode').textContent = lastIdx>=0
+    ? `Periode: Januari – ${BULAN_PANJANG[lastIdx]} ${tahunIni.tahun}`
+    : `Periode: ${tahunIni.tahun}`;
+
+  document.getElementById('aqKpiTahunIniLabel').textContent = tahunIni.tahun;
+  document.getElementById('aqKpiTahunIni').textContent = formatNum(tahunIni.total);
+  document.getElementById('aqKpiTahunLaluLabel').textContent = tahunLalu.tahun;
+  document.getElementById('aqKpiTahunLalu').textContent = formatNum(tahunLalu.total);
+  document.getElementById('aqKpiRata').textContent = formatNum(Math.round(tahunIni.total/bulanTerisi.length));
+  const k = tahunIni.kenaikan;
+  document.getElementById('aqKpiKenaikan').textContent = (k>0?'+':'') + formatNum(k);
+
+  document.getElementById('aqTrenSub').textContent = `Jumlah layanan aqiqah bulanan ${tahunIni.tahun}`;
+
+  aqCharts = destroyCharts(aqCharts);
+  aqCharts.push(new Chart(document.getElementById('chartAqBulanan'), {
+    type:'bar',
+    data:{ labels: BULAN_SINGKAT, datasets:[{ label:`Aqiqah ${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:6, maxBarThickness:38 }] },
+    options: chartOptions('angka', false)
+  }));
+  aqCharts.push(new Chart(document.getElementById('chartAqTahunan'), {
+    type:'bar',
+    data:{ labels: tahunList.map(t=>t.tahun), datasets:[{ label:'Total per Tahun', data: tahunList.map(t=>t.total),
+      backgroundColor: tahunList.map((t,i)=> i===tahunList.length-1 ? '#B8842E' : '#A9E8DD'), borderRadius:6, maxBarThickness:40 }] },
+    options: chartOptions('angka', false)
+  }));
+}
+
+/* ============ RENDER FR ============ */
+function titleCase(s){
+  return s.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+}
+
+function populateFrSelects(){
+  const selNama = document.getElementById('frNamaSelect');
+  selNama.innerHTML = '<option value="__semua__">Semua Fundraiser</option>';
+  FR_NAMA.forEach(n=>{
+    const opt = document.createElement('option');
+    opt.value = n; opt.textContent = titleCase(n);
+    selNama.appendChild(opt);
+  });
+  selNama.addEventListener('change', renderFR);
+
+  const selBulan = document.getElementById('frBulanSelect');
+  selBulan.innerHTML = '';
+  FR_DATA.bulanTersedia.forEach(b=>{
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = titleCase(b);
+    selBulan.appendChild(opt);
+  });
+  selBulan.value = FR_DATA.bulanTersedia.includes(FR_DATA.bulanIni) ? FR_DATA.bulanIni : FR_DATA.bulanTersedia[FR_DATA.bulanTersedia.length-1];
+  selBulan.addEventListener('change', renderFR);
+}
+
+function renderFR(){
+  if(!FR_DATA.bulanTersedia.length){
+    document.getElementById('frTrenSub').textContent = 'Belum ada blok bulan yang terbaca dari sheet Fundraiser.';
+    return;
+  }
+  const namaTerpilih = document.getElementById('frNamaSelect').value;
+  const bulanTerpilih = document.getElementById('frBulanSelect').value;
+  const dataBulan = FR_DATA.perBulan[bulanTerpilih] || [];
+  const terurut = dataBulan.slice().sort((a,b)=>(b.persen||0)-(a.persen||0));
+
+  document.getElementById('frHeroPeriode').textContent = `Periode: ${titleCase(bulanTerpilih)} 2026`;
+
+  if(namaTerpilih === '__semua__'){
+    const totalTarget = dataBulan.reduce((s,d)=>s+(d.target||0),0);
+    const totalRealisasi = dataBulan.reduce((s,d)=>s+(d.realisasi||0),0);
+    const persenTim = totalTarget ? (totalRealisasi/totalTarget*100) : 0;
+
+    document.getElementById('frHeroLabel').textContent = 'TOTAL PEROLEHAN SELURUH FUNDRAISER';
+    animateValue(document.getElementById('frHeroTotal'), totalRealisasi, formatRp);
+    document.getElementById('frKpiTarget').textContent = formatRp(totalTarget);
+    document.getElementById('frKpiRealisasi').textContent = formatRp(totalRealisasi);
+    document.getElementById('frKpiPersen').textContent = persenTim.toFixed(1)+'%';
+    document.getElementById('frKpiRank').textContent = '–';
+    document.getElementById('frTrenSub').textContent = 'Total tim per bulan (Target vs Realisasi)';
+  } else {
+    const dataOrang = dataBulan.find(d=>d.nama===namaTerpilih);
+    const rank = terurut.findIndex(d=>d.nama===namaTerpilih) + 1;
+
+    document.getElementById('frHeroLabel').textContent = 'TOTAL PEROLEHAN ' + titleCase(namaTerpilih).toUpperCase();
+    if(dataOrang){
+      animateValue(document.getElementById('frHeroTotal'), dataOrang.realisasi, formatRp);
+      document.getElementById('frKpiTarget').textContent = formatRp(dataOrang.target);
+      document.getElementById('frKpiRealisasi').textContent = formatRp(dataOrang.realisasi);
+      document.getElementById('frKpiPersen').textContent = (dataOrang.persen!==null&&dataOrang.persen!==undefined?dataOrang.persen:0).toFixed(1)+'%';
+      document.getElementById('frKpiRank').textContent = rank ? ('#'+rank) : '–';
+    } else {
+      document.getElementById('frHeroTotal').textContent = formatRp(0);
+      document.getElementById('frKpiTarget').textContent = document.getElementById('frKpiRealisasi').textContent = 'Rp 0';
+      document.getElementById('frKpiPersen').textContent = '0%'; document.getElementById('frKpiRank').textContent = '–';
+    }
+    document.getElementById('frTrenSub').textContent = `Target vs realisasi ${titleCase(namaTerpilih)} per bulan`;
+  }
+
+  frCharts = destroyCharts(frCharts);
+
+  const labelBulan = FR_DATA.bulanTersedia.map(titleCase);
+  let dataTarget, dataRealisasi;
+  if(namaTerpilih === '__semua__'){
+    dataTarget = FR_DATA.bulanTersedia.map(b => (FR_DATA.perBulan[b]||[]).reduce((s,d)=>s+(d.target||0),0));
+    dataRealisasi = FR_DATA.bulanTersedia.map(b => (FR_DATA.perBulan[b]||[]).reduce((s,d)=>s+(d.realisasi||0),0));
+  } else {
+    dataTarget = FR_DATA.bulanTersedia.map(b => { const d=(FR_DATA.perBulan[b]||[]).find(x=>x.nama===namaTerpilih); return d?d.target:null; });
+    dataRealisasi = FR_DATA.bulanTersedia.map(b => { const d=(FR_DATA.perBulan[b]||[]).find(x=>x.nama===namaTerpilih); return d?d.realisasi:null; });
+  }
+
+  frCharts.push(new Chart(document.getElementById('chartFrTren'), {
+    type:'bar',
+    data:{ labels: labelBulan, datasets:[
+      {label:'Realisasi', data: dataRealisasi, backgroundColor:'#128A7B', borderRadius:5, maxBarThickness:30},
+      {label:'Target', data: dataTarget, backgroundColor:'#E4CB93', borderRadius:5, maxBarThickness:30}
+    ]},
+    options: chartOptions('rupiah', true)
+  }));
+
+  const optBanding = chartOptions('rupiah', false);
+  optBanding.indexAxis = 'y';
+  frCharts.push(new Chart(document.getElementById('chartFrBanding'), {
+    type:'bar',
+    data:{
+      labels: terurut.map(d=>titleCase(d.nama)),
+      datasets:[{
+        label:'Realisasi',
+        data: terurut.map(d=>d.realisasi),
+        backgroundColor: terurut.map(d=> d.nama===namaTerpilih ? '#B8842E' : '#128A7B'),
+        borderRadius:5, maxBarThickness:22
+      }]
+    },
+    options: optBanding
+  }));
+}
+
+/* ============ MUAT DATA LIVE (JIKA APPS SCRIPT SUDAH DI-DEPLOY), FALLBACK KE DATA DI ATAS ============ */
+async function muatData(){
+  if(!APPS_SCRIPT_URL){
+    document.getElementById('syncLabel').textContent = 'Data Contoh (belum tersambung)';
+    populateYearSelect(); renderZis(); renderAqiqah();
+    populateFrSelects(); renderFR();
+    return;
+  }
+  try{
+    const res = await fetch(APPS_SCRIPT_URL);
+    const json = await res.json();
+    if(json.zis) ZIS_DATA = json.zis;
+    if(json.aqiqah) AQIQAH_DATA = json.aqiqah;
+    if(json.fr && json.fr.bulanTersedia && json.fr.bulanTersedia.length) FR_DATA = json.fr;
+    document.getElementById('syncLabel').textContent = 'Tersinkronisasi';
+  }catch(err){
+    document.getElementById('syncLabel').textContent = 'Gagal sinkron, pakai data contoh';
+    console.warn('Gagal memuat dari Apps Script, pakai data fallback:', err);
+  }
+  populateYearSelect();
+  renderZis();
+  renderAqiqah();
+  populateFrSelects();
+  renderFR();
+}
+
+muatData();
+</script>
+</body>
+</html>
