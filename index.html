@@ -443,6 +443,25 @@ function chartOptions(kind, showLegend){
     }
   };
 }
+// Khusus horizontal bar (indexAxis:'y'): sumbu nilai jadi X, sumbu kategori jadi Y.
+// chartOptions() di atas selalu taruh format angka di sumbu y, jadi tidak dipakai
+// ulang untuk kasus horizontal -- kalau dipaksa, label nama fundraiser di sumbu y
+// malah ikut diformat sebagai angka (jadi "0 Jt" semua). Ini versinya yang benar.
+function chartOptionsHorizontal(kind){
+  return {
+    indexAxis:'y',
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{
+      legend:{ display:false },
+      tooltip:{ callbacks:{ label: ctx => ' ' + (kind==='rupiah'? formatRp(ctx.parsed.x) : formatNum(ctx.parsed.x)) } }
+    },
+    scales:{
+      x:{ ticks:{ callback:v=> kind==='rupiah' ? (v/1000000).toLocaleString('id-ID')+' Jt' : formatNum(v), font:{family:'Manrope', size:11} }, grid:{color:'#EAF6F3'} },
+      y:{ grid:{display:false}, ticks:{font:{family:'Manrope', size:11}} }
+    }
+  };
+}
 function destroyCharts(arr){ arr.forEach(c=>c && c.destroy()); return []; }
 
 /* ============ RENDER ZIS ============ */
@@ -651,8 +670,7 @@ function renderFR(){
     options: chartOptions('rupiah', true)
   }));
 
-  const optBanding = chartOptions('rupiah', false);
-  optBanding.indexAxis = 'y';
+  const optBanding = chartOptionsHorizontal('rupiah');
   frCharts.push(new Chart(document.getElementById('chartFrBanding'), {
     type:'bar',
     data:{
