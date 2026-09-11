@@ -99,7 +99,8 @@
       </div>
       <div class="flex items-center gap-3">
         <select id="zisYearSelect" class="tosca-select text-sm px-3 py-2"></select>
-        <span id="zisFilterLabel" class="text-xs font-medium" style="color:var(--slate)"></span>
+        <select id="zisBulanSelect" class="tosca-select text-sm px-3 py-2"></select>
+        <span id="zisFilterLabel" class="text-xs font-medium hidden md:inline" style="color:var(--slate)"></span>
       </div>
     </div>
 
@@ -376,7 +377,7 @@ const FR_FALLBACK = {
 };
 
 /* ============ GANTI DENGAN URL WEB APP APPS SCRIPT SETELAH DEPLOY (lihat Code.gs) ============ */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbykr7SHqp4YK8w_6ikFzvo5Fpvg5RnT70kI0GPJY1oX_pCK63MDg3P0-fO9-cc-ZDYu1w/exec"
+const APPS_SCRIPT_URL = ""; // contoh: "https://script.google.com/macros/s/XXXXXXXXXXXX/exec"
 
 let ZIS_DATA = ZIS_FALLBACK;
 let AQIQAH_DATA = AQIQAH_FALLBACK;
@@ -477,47 +478,94 @@ function populateYearSelect(){
   sel.addEventListener('change', renderZis);
 }
 
+function populateZisBulanSelect(){
+  const sel = document.getElementById('zisBulanSelect');
+  sel.innerHTML = '<option value="">Semua Bulan</option>';
+  BULAN_PANJANG.forEach((b,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = b;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', renderZis);
+}
+
 function renderZis(){
   const tahunList = ZIS_DATA.tahunan;
   const selectedYear = parseInt(document.getElementById('zisYearSelect').value);
+  const selectedBulan = document.getElementById('zisBulanSelect').value; // '' = semua bulan, else index 0-11
   const idxSel = tahunList.findIndex(t=>t.tahun===selectedYear);
   const tahunIni = tahunList[idxSel];
   const tahunLalu = tahunList[idxSel-1] || null;
   const target = ZIS_DATA.target2026;
   const lastIdx = isiBulanTerakhir(tahunIni.bulanan);
 
-  document.getElementById('zisFilterLabel').textContent = `Menampilkan tren ${tahunIni.tahun}`;
-  animateValue(document.getElementById('zisHeroTotal'), tahunIni.total, formatRp);
-  document.getElementById('zisHeroPeriode').textContent = lastIdx>=0
-    ? `Periode: Januari – ${BULAN_PANJANG[lastIdx]} ${tahunIni.tahun}`
-    : `Periode: ${tahunIni.tahun}`;
+  if(selectedBulan === ''){
+    // ---- Mode: Semua Bulan (total/YTD tahun terpilih) ----
+    document.getElementById('zisFilterLabel').textContent = `Menampilkan tren ${tahunIni.tahun}`;
+    animateValue(document.getElementById('zisHeroTotal'), tahunIni.total, formatRp);
+    document.getElementById('zisHeroPeriode').textContent = lastIdx>=0
+      ? `Periode: Januari – ${BULAN_PANJANG[lastIdx]} ${tahunIni.tahun}`
+      : `Periode: ${tahunIni.tahun}`;
 
-  document.getElementById('kpiTahunIniLabel').textContent = tahunIni.tahun;
-  document.getElementById('kpiTahunIni').textContent = formatRp(tahunIni.total);
+    document.getElementById('kpiTahunIniLabel').textContent = tahunIni.tahun;
+    document.getElementById('kpiTahunIni').textContent = formatRp(tahunIni.total);
+    document.getElementById('kpiTahunLaluLabel').textContent = tahunLalu ? tahunLalu.tahun : '–';
+    document.getElementById('kpiTahunLalu').textContent = tahunLalu ? formatRp(tahunLalu.total) : '–';
 
-  document.getElementById('kpiTahunLaluLabel').textContent = tahunLalu ? tahunLalu.tahun : '–';
-  document.getElementById('kpiTahunLalu').textContent = tahunLalu ? formatRp(tahunLalu.total) : '–';
+    document.getElementById('kpiTarget').textContent = formatRp(target.total);
+    const pctTarget = target.total ? (tahunIni.total/target.total*100).toFixed(1) : '0';
+    document.getElementById('kpiTargetSub').textContent = tahunIni.tahun===2026 ? pctTarget+'% dari target tahunan' : 'Target tersedia utk 2026';
 
-  document.getElementById('kpiTarget').textContent = formatRp(target.total);
-  const pctTarget = target.total ? (tahunIni.total/target.total*100).toFixed(1) : '0';
-  document.getElementById('kpiTargetSub').textContent = tahunIni.tahun===2026 ? pctTarget+'% dari target tahunan' : 'Target tersedia utk 2026';
-
-  if(tahunLalu){
-    const rasio = tahunIni.bulanan.map((v,i)=> (v!==null && tahunLalu.bulanan[i]) ? (v/tahunLalu.bulanan[i]*100) : null).filter(v=>v!==null);
-    const avg = rasio.length ? rasio.reduce((a,b)=>a+b,0)/rasio.length : 0;
-    document.getElementById('kpiGrowth').textContent = avg.toFixed(0)+'%';
+    if(tahunLalu){
+      const rasio = tahunIni.bulanan.map((v,i)=> (v!==null && tahunLalu.bulanan[i]) ? (v/tahunLalu.bulanan[i]*100) : null).filter(v=>v!==null);
+      const avg = rasio.length ? rasio.reduce((a,b)=>a+b,0)/rasio.length : 0;
+      document.getElementById('kpiGrowth').textContent = avg.toFixed(0)+'%';
+    } else {
+      document.getElementById('kpiGrowth').textContent = '–';
+    }
   } else {
-    document.getElementById('kpiGrowth').textContent = '–';
+    // ---- Mode: satu bulan spesifik, dibandingkan ke bulan sama tahun lalu ----
+    const b = parseInt(selectedBulan);
+    const nilaiIni = tahunIni.bulanan[b];
+    const nilaiLalu = tahunLalu ? tahunLalu.bulanan[b] : null;
+
+    document.getElementById('zisFilterLabel').textContent = `Menampilkan ${BULAN_PANJANG[b]} ${tahunIni.tahun}`;
+    animateValue(document.getElementById('zisHeroTotal'), nilaiIni||0, formatRp);
+    document.getElementById('zisHeroPeriode').textContent = `Periode: ${BULAN_PANJANG[b]} ${tahunIni.tahun}`;
+
+    document.getElementById('kpiTahunIniLabel').textContent = BULAN_SINGKAT[b]+' '+tahunIni.tahun;
+    document.getElementById('kpiTahunIni').textContent = formatRp(nilaiIni);
+    document.getElementById('kpiTahunLaluLabel').textContent = tahunLalu ? (BULAN_SINGKAT[b]+' '+tahunLalu.tahun) : '–';
+    document.getElementById('kpiTahunLalu').textContent = tahunLalu ? formatRp(nilaiLalu) : '–';
+
+    const targetBulan = target.bulanan[b];
+    document.getElementById('kpiTarget').textContent = formatRp(targetBulan);
+    const pctTargetBulan = (targetBulan && nilaiIni!==null) ? (nilaiIni/targetBulan*100).toFixed(1) : '0';
+    document.getElementById('kpiTargetSub').textContent = tahunIni.tahun===2026 ? pctTargetBulan+'% dari target bulan ini' : 'Target tersedia utk 2026';
+
+    if(nilaiIni!==null && nilaiLalu){
+      const growth = ((nilaiIni/nilaiLalu)-1)*100;
+      document.getElementById('kpiGrowth').textContent = (growth>=0?'+':'')+growth.toFixed(0)+'%';
+    } else {
+      document.getElementById('kpiGrowth').textContent = '–';
+    }
   }
 
-  document.getElementById('zisTrenSub').textContent = `Perolehan bulanan ${tahunIni.tahun} (bulan tanpa data ditampilkan kosong)`;
+  document.getElementById('zisTrenSub').textContent = tahunLalu
+    ? `Perbandingan tiap bulan: ${tahunIni.tahun} vs ${tahunLalu.tahun}`
+    : `Perolehan bulanan ${tahunIni.tahun} (bulan tanpa data ditampilkan kosong)`;
 
   zisCharts = destroyCharts(zisCharts);
 
   zisCharts.push(new Chart(document.getElementById('chartZisBulanan'), {
     type:'bar',
-    data:{ labels: BULAN_SINGKAT, datasets:[{ label:`Perolehan ${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:6, maxBarThickness:38 }] },
-    options: chartOptions('rupiah', false)
+    data:{ labels: BULAN_SINGKAT, datasets: tahunLalu ? [
+      { label:`${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:5, maxBarThickness:24 },
+      { label:`${tahunLalu.tahun}`, data: tahunLalu.bulanan, backgroundColor:'#A9E8DD', borderRadius:5, maxBarThickness:24 }
+    ] : [
+      { label:`Perolehan ${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:6, maxBarThickness:38 }
+    ]},
+    options: chartOptions('rupiah', !!tahunLalu)
   }));
 
   zisCharts.push(new Chart(document.getElementById('chartZisTahunan'), {
@@ -690,7 +738,7 @@ function renderFR(){
 async function muatData(){
   if(!APPS_SCRIPT_URL){
     document.getElementById('syncLabel').textContent = 'Data Contoh (belum tersambung)';
-    populateYearSelect(); renderZis(); renderAqiqah();
+    populateYearSelect(); populateZisBulanSelect(); renderZis(); renderAqiqah();
     populateFrSelects(); renderFR();
     return;
   }
@@ -706,6 +754,7 @@ async function muatData(){
     console.warn('Gagal memuat dari Apps Script, pakai data fallback:', err);
   }
   populateYearSelect();
+  populateZisBulanSelect();
   renderZis();
   renderAqiqah();
   populateFrSelects();
