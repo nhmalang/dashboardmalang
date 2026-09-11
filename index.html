@@ -84,7 +84,7 @@
   <!-- TAB NAV -->
   <nav class="card p-1.5 mb-5 flex gap-1 overflow-x-auto">
     <button data-tab="zis" class="tab-btn active flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">ZIS</button>
-    <button data-tab="fr" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">FUNDRISER</button>
+    <button data-tab="fr" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">FUNDRAISER</button>
     <!-- <button data-tab="prog" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">PROGRAM</button> -->
     <button data-tab="aqiqah" class="tab-btn flex-1 min-w-[90px] text-sm font-bold px-4 py-2.5 rounded-xl">AQIQAH</button>
   </nav>
@@ -202,12 +202,12 @@
 
     <div class="card p-5">
       <h3 class="font-bold text-base">Perbandingan Antar Fundraiser</h3>
-      <p id="frBandingSub" class="text-xs mb-3" style="color:var(--slate)">Diurutkan dari capaian % tertinggi</p>
+      <p id="frBandingSub" class="text-xs mb-3" style="color:var(--slate)">Diurutkan dari perolehan (Rp) tertinggi</p>
       <div class="chart-wrap" style="height:320px;"><canvas id="chartFrBanding"></canvas></div>
     </div>
 
     <p class="text-xs mt-4 text-center" style="color:var(--slate-light)">
-      Data ditarik dari sheet "Dashboard Fundraiser". Otomatisasi WA mingguan (Sabtu) mengirim progres masing-masing ke nomor pribadi tiap fundraiser.
+      Data ditarik dari Google Spreadsheet "Dashboard Fundraiser".
     </p>
   </section>
 
@@ -248,7 +248,7 @@
         <p id="aqKpiRata" class="tabular kpi-value font-extrabold">0</p>
       </div>
       <div class="card p-4" style="border-top:3px solid var(--tosca-400)">
-        <p class="text-xs font-bold" style="color:var(--slate)">SELISIH PEROLEHAN</p>
+        <p class="text-xs font-bold" style="color:var(--slate)">SELISIH EKOR</p>
         <p class="text-[11px] mb-1" style="color:var(--slate-light)">vs tahun lalu</p>
         <p id="aqKpiKenaikan" class="tabular kpi-value font-extrabold">0</p>
       </div>
@@ -661,7 +661,8 @@ function renderFR(){
   const namaTerpilih = document.getElementById('frNamaSelect').value;
   const bulanTerpilih = document.getElementById('frBulanSelect').value;
   const dataBulan = FR_DATA.perBulan[bulanTerpilih] || [];
-  const terurut = dataBulan.slice().sort((a,b)=>(b.persen||0)-(a.persen||0));
+  const terurut = dataBulan.slice().sort((a,b)=>(b.persen||0)-(a.persen||0)); // buat Peringkat (KPI), tetap berdasar %
+  const terurutRealisasi = dataBulan.slice().sort((a,b)=>(b.realisasi||0)-(a.realisasi||0)); // buat chart perbandingan, berdasar Rp perolehan
 
   document.getElementById('frHeroPeriode').textContent = `Periode: ${titleCase(bulanTerpilih)} 2026`;
 
@@ -721,11 +722,11 @@ function renderFR(){
   frCharts.push(new Chart(document.getElementById('chartFrBanding'), {
     type:'bar',
     data:{
-      labels: terurut.map(d=>titleCase(d.nama)),
+      labels: terurutRealisasi.map(d=>titleCase(d.nama)),
       datasets:[{
         label:'Realisasi',
-        data: terurut.map(d=>d.realisasi),
-        backgroundColor: terurut.map(d=> d.nama===namaTerpilih ? '#B8842E' : '#128A7B'),
+        data: terurutRealisasi.map(d=>d.realisasi),
+        backgroundColor: terurutRealisasi.map(d=> d.nama===namaTerpilih ? '#B8842E' : '#128A7B'),
         borderRadius:5, maxBarThickness:22
       }]
     },
