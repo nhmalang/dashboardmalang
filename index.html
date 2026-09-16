@@ -215,7 +215,7 @@
 
     <div class="card p-5 mt-5">
       <h3 class="font-bold text-base">Target Kwitansi</h3>
-      <p class="text-xs mb-3" style="color:var(--slate)">Data Lama &amp; Data Baru per fundraiser (diurutkan dari perolehan tertinggi) — arahkan kursor untuk lihat Target, Kekurangan &amp; Prosentase</p>
+      <p class="text-xs mb-3" style="color:var(--slate)">Data Perolehan Vs Kwitansi</p>
       <div class="chart-wrap" style="height:320px;"><canvas id="chartFrLamaBaru"></canvas></div>
     </div>
 
@@ -903,7 +903,7 @@ function renderFR(){
               if(!ctx.length) return [];
               const d = dataLB[ctx[0].dataIndex];
               const persenText = (d.persen === null || d.persen === undefined) ? 'belum ada target' : d.persen.toFixed(1)+'%';
-              return ['', 'Target: ' + formatRp(d.target), 'Kekurangan: ' + formatRp(d.kekurangan), 'Prosentase: ' + persenText];
+              return ['', 'Target: ' + formatRp(d.target), 'Selisih: ' + formatRp(d.kekurangan), 'Prosentase: ' + persenText];
             }
           }
         }
