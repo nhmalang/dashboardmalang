@@ -213,6 +213,12 @@
       <div class="chart-wrap" style="height:320px;"><canvas id="chartFrBandingPersen"></canvas></div>
     </div>
 
+    <div class="card p-5 mt-5">
+      <h3 class="font-bold text-base">Target Kwitansi</h3>
+      <p class="text-xs mb-3" style="color:var(--slate)">Data Lama &amp; Data Baru per fundraiser (diurutkan dari perolehan tertinggi) — arahkan kursor untuk lihat Target, Kekurangan &amp; Prosentase</p>
+      <div class="chart-wrap" style="height:320px;"><canvas id="chartFrLamaBaru"></canvas></div>
+    </div>
+
     <p class="text-xs mt-4 text-center" style="color:var(--slate-light)">
       Data ditarik dari Google Spreadsheet "Dashboard Fundraiser".
     </p>
@@ -438,6 +444,22 @@ const FR_FALLBACK = {
   }
 };
 
+// B2:H11 di sheet "Dashboard Fundraiser" (gid 1161011214) -- snapshot Data Lama
+// vs Data Baru per fundraiser, terpisah dari data bulanan di FR_FALLBACK di atas.
+const FR_LAMABARU_FALLBACK = {
+  data: [
+    {nama:'AHMAD FATHONI MUBAROK', dataLama:6925003, dataBaru:30000, target:0, kekurangan:6925003, persen:null},
+    {nama:'TONY SANTOSO', dataLama:8453000, dataBaru:0, target:0, kekurangan:8453000, persen:null},
+    {nama:'HANIF MAHZUNI', dataLama:9988131, dataBaru:300000, target:0, kekurangan:9988131, persen:null},
+    {nama:'DWI HARIANTO', dataLama:6715000, dataBaru:0, target:0, kekurangan:6715000, persen:null},
+    {nama:'HERDIAWAN DEDIK PRASETYO', dataLama:14326000, dataBaru:0, target:0, kekurangan:14326000, persen:null},
+    {nama:"ABDUL A'LA", dataLama:11291106, dataBaru:895000, target:0, kekurangan:11291106, persen:null},
+    {nama:'MUHAMMAD ZAINAL MUSLIM', dataLama:11940212, dataBaru:0, target:0, kekurangan:11940212, persen:null},
+    {nama:'ABDULLAH YUSUF', dataLama:5055047, dataBaru:0, target:0, kekurangan:5055047, persen:null},
+    {nama:'MOCHAMMAD SAIFU NAFI', dataLama:20457547, dataBaru:250000, target:0, kekurangan:20457547, persen:null}
+  ]
+};
+
 /* ============ GANTI DENGAN URL WEB APP APPS SCRIPT SETELAH DEPLOY (lihat Code.gs) ============ */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbykr7SHqp4YK8w_6ikFzvo5Fpvg5RnT70kI0GPJY1oX_pCK63MDg3P0-fO9-cc-ZDYu1w/exec"
 
@@ -445,6 +467,7 @@ let ZIS_DATA = ZIS_FALLBACK;
 let AQIQAH_DATA = AQIQAH_FALLBACK;
 let UMROH_DATA = UMROH_FALLBACK;
 let FR_DATA = FR_FALLBACK;
+let FR_LAMABARU_DATA = FR_LAMABARU_FALLBACK;
 let zisCharts = [];
 let aqCharts = [];
 let umCharts = [];
@@ -853,6 +876,44 @@ function renderFR(){
     },
     options: optPersen
   }));
+
+  const dataLB = FR_LAMABARU_DATA.data.slice().sort((a,b)=>(b.total||0)-(a.total||0)); // urut perolehan (Total) tertinggi
+
+  frCharts.push(new Chart(document.getElementById('chartFrLamaBaru'), {
+    type:'bar',
+    data:{
+      labels: dataLB.map(d=>titleCase(d.nama)),
+      datasets:[
+        { label:'Data Lama', data: dataLB.map(d=>d.dataLama), backgroundColor:'#128A7B', borderRadius:4, maxBarThickness:22 },
+        { label:'Data Baru', data: dataLB.map(d=>d.dataBaru), backgroundColor:'#B8842E', borderRadius:4, maxBarThickness:22 }
+      ]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:true, position:'top', align:'end', labels:{boxWidth:12, font:{family:'Manrope', weight:'600', size:11}} },
+        tooltip:{
+          callbacks:{
+            title: ctx => ctx.length ? ctx[0].label : '',
+            label: ctx => ' ' + ctx.dataset.label + ': ' + formatRp(ctx.parsed.x),
+            afterBody: ctx => {
+              if(!ctx.length) return [];
+              const d = dataLB[ctx[0].dataIndex];
+              const persenText = (d.persen === null || d.persen === undefined) ? 'belum ada target' : d.persen.toFixed(1)+'%';
+              return ['', 'Target: ' + formatRp(d.target), 'Kekurangan: ' + formatRp(d.kekurangan), 'Prosentase: ' + persenText];
+            }
+          }
+        }
+      },
+      scales:{
+        x:{ stacked:true, ticks:{ callback:v=>(v/1000000).toLocaleString('id-ID')+' Jt', font:{family:'Manrope', size:11} }, grid:{color:'#EAF6F3'} },
+        y:{ stacked:true, grid:{display:false}, ticks:{font:{family:'Manrope', size:11}} }
+      }
+    }
+  }));
 }
 
 /* ============ MUAT DATA LIVE (JIKA APPS SCRIPT SUDAH DI-DEPLOY), FALLBACK KE DATA DI ATAS ============ */
@@ -870,6 +931,7 @@ async function muatData(){
     if(json.aqiqah) AQIQAH_DATA = json.aqiqah;
     if(json.umroh) UMROH_DATA = json.umroh;
     if(json.fr && json.fr.bulanTersedia && json.fr.bulanTersedia.length) FR_DATA = json.fr;
+    if(json.frLamaBaru && json.frLamaBaru.data && json.frLamaBaru.data.length) FR_LAMABARU_DATA = json.frLamaBaru;
     document.getElementById('syncLabel').textContent = 'Tersinkronisasi';
   }catch(err){
     document.getElementById('syncLabel').textContent = 'Gagal sinkron, pakai data contoh';
