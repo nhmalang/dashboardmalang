@@ -215,7 +215,7 @@
 
     <div class="card p-5 mt-5">
       <h3 class="font-bold text-base">Target Kwitansi</h3>
-      <p class="text-xs mb-3" style="color:var(--slate)">Perbandingan Perolehan FR dengan Data Kwitansi</p>
+      <p class="text-xs mb-3" style="color:var(--slate)">Data Lama &amp; Data Baru per fundraiser (diurutkan dari perolehan tertinggi) — arahkan kursor untuk lihat Target, Kekurangan &amp; Prosentase</p>
       <div class="chart-wrap" style="height:320px;"><canvas id="chartFrLamaBaru"></canvas></div>
     </div>
 
@@ -892,7 +892,7 @@ function renderFR(){
       indexAxis:'y',
       responsive:true,
       maintainAspectRatio:false,
-      interaction:{ mode:'index', intersect:false },
+      interaction:{ mode:'index', intersect:false, axis:'y' },
       plugins:{
         legend:{ display:true, position:'top', align:'end', labels:{boxWidth:12, font:{family:'Manrope', weight:'600', size:11}} },
         tooltip:{
