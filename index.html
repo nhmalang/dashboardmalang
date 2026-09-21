@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="favicon.png">
 <style>
   :root{
     --tosca-950:#052E2A;
@@ -216,7 +215,7 @@
 
     <div class="card p-5 mt-5">
       <h3 class="font-bold text-base">Target Kwitansi</h3>
-      <p class="text-xs mb-3" style="color:var(--slate)">Perbandingan perolehan dengan Target Kwitansi bulan berjalan</p>
+      <p class="text-xs mb-3" style="color:var(--slate)">Data Lama &amp; Data Baru per fundraiser (diurutkan dari perolehan tertinggi) — arahkan kursor untuk lihat Target, Kekurangan &amp; Prosentase</p>
       <div class="chart-wrap" style="height:320px;"><canvas id="chartFrLamaBaru"></canvas></div>
     </div>
 
@@ -239,6 +238,15 @@
 
   <!-- ================= AQIQAH PANEL ================= -->
   <section id="panel-aqiqah" class="hidden fade-in">
+    <div class="card p-4 mb-5 flex flex-col md:flex-row md:items-center gap-3 md:justify-between">
+      <div class="flex items-center gap-2 text-sm font-semibold" style="color:var(--tosca-800)">
+        <span>⏱️ Filter Bulan:</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="aqBulanSelect" class="tosca-select text-sm px-3 py-2"></select>
+      </div>
+    </div>
+
     <div class="rounded-2xl p-7 md:p-9 mb-5 text-center" style="background:linear-gradient(135deg,var(--tosca-800),var(--tosca-500));">
       <p class="text-white/85 text-xs font-bold tracking-wide">TOTAL LAYANAN AQIQAH CABANG MALANG</p>
       <p id="aqHeroTotal" class="tabular text-white font-extrabold my-2" style="font-size:clamp(2rem,6vw,3.2rem);">0</p>
@@ -681,33 +689,71 @@ function renderZis(){
 }
 
 /* ============ RENDER AQIQAH ============ */
+function populateAqBulanSelect(){
+  const sel = document.getElementById('aqBulanSelect');
+  sel.innerHTML = '<option value="">Semua Bulan</option>';
+  BULAN_PANJANG.forEach((b,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = b;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', renderAqiqah);
+}
+
 function renderAqiqah(){
   const tahunList = AQIQAH_DATA.tahunan;
   const tahunIni = tahunList[tahunList.length-1];
   const tahunLalu = tahunList[tahunList.length-2];
   const lastIdx = isiBulanTerakhir(tahunIni.bulanan);
   const bulanTerisi = tahunIni.bulanan.filter(v=>v!==null);
+  const selectedBulan = document.getElementById('aqBulanSelect').value; // '' = semua bulan, else index 0-11
 
-  animateValue(document.getElementById('aqHeroTotal'), tahunIni.total, formatNum);
-  document.getElementById('aqHeroPeriode').textContent = lastIdx>=0
-    ? `Periode: Januari – ${BULAN_PANJANG[lastIdx]} ${tahunIni.tahun}`
-    : `Periode: ${tahunIni.tahun}`;
+  document.getElementById('aqKpiRata').textContent = bulanTerisi.length ? formatNum(Math.round(tahunIni.total/bulanTerisi.length)) : '0';
 
-  document.getElementById('aqKpiTahunIniLabel').textContent = tahunIni.tahun;
-  document.getElementById('aqKpiTahunIni').textContent = formatNum(tahunIni.total);
-  document.getElementById('aqKpiTahunLaluLabel').textContent = tahunLalu.tahun;
-  document.getElementById('aqKpiTahunLalu').textContent = formatNum(tahunLalu.total);
-  document.getElementById('aqKpiRata').textContent = formatNum(Math.round(tahunIni.total/bulanTerisi.length));
-  const k = tahunIni.kenaikan;
-  document.getElementById('aqKpiKenaikan').textContent = (k>0?'+':'') + formatNum(k);
+  if(selectedBulan === ''){
+    // ---- Mode: Semua Bulan (total/YTD tahun berjalan) ----
+    animateValue(document.getElementById('aqHeroTotal'), tahunIni.total, formatNum);
+    document.getElementById('aqHeroPeriode').textContent = lastIdx>=0
+      ? `Periode: Januari – ${BULAN_PANJANG[lastIdx]} ${tahunIni.tahun}`
+      : `Periode: ${tahunIni.tahun}`;
 
-  document.getElementById('aqTrenSub').textContent = `Jumlah layanan aqiqah bulanan ${tahunIni.tahun}`;
+    document.getElementById('aqKpiTahunIniLabel').textContent = tahunIni.tahun;
+    document.getElementById('aqKpiTahunIni').textContent = formatNum(tahunIni.total);
+    document.getElementById('aqKpiTahunLaluLabel').textContent = tahunLalu.tahun;
+    document.getElementById('aqKpiTahunLalu').textContent = formatNum(tahunLalu.total);
+    const k = tahunIni.kenaikan;
+    document.getElementById('aqKpiKenaikan').textContent = (k>0?'+':'') + formatNum(k);
+  } else {
+    // ---- Mode: satu bulan spesifik, dibandingkan ke bulan sama tahun lalu ----
+    const b = parseInt(selectedBulan);
+    const nilaiIni = tahunIni.bulanan[b];
+    const nilaiLalu = tahunLalu.bulanan[b];
+
+    animateValue(document.getElementById('aqHeroTotal'), nilaiIni||0, formatNum);
+    document.getElementById('aqHeroPeriode').textContent = `Periode: ${BULAN_PANJANG[b]} ${tahunIni.tahun}`;
+
+    document.getElementById('aqKpiTahunIniLabel').textContent = BULAN_SINGKAT[b]+' '+tahunIni.tahun;
+    document.getElementById('aqKpiTahunIni').textContent = formatNum(nilaiIni);
+    document.getElementById('aqKpiTahunLaluLabel').textContent = BULAN_SINGKAT[b]+' '+tahunLalu.tahun;
+    document.getElementById('aqKpiTahunLalu').textContent = formatNum(nilaiLalu);
+    const selisih = (nilaiIni!==null && nilaiLalu!==null) ? (nilaiIni-nilaiLalu) : null;
+    document.getElementById('aqKpiKenaikan').textContent = selisih===null ? '–' : (selisih>0?'+':'') + formatNum(selisih);
+  }
+
+  document.getElementById('aqTrenSub').textContent = tahunLalu
+    ? `Perbandingan tiap bulan: ${tahunIni.tahun} vs ${tahunLalu.tahun}`
+    : `Jumlah layanan aqiqah bulanan ${tahunIni.tahun}`;
 
   aqCharts = destroyCharts(aqCharts);
   aqCharts.push(new Chart(document.getElementById('chartAqBulanan'), {
     type:'bar',
-    data:{ labels: BULAN_SINGKAT, datasets:[{ label:`Aqiqah ${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:6, maxBarThickness:38 }] },
-    options: chartOptions('angka', false)
+    data:{ labels: BULAN_SINGKAT, datasets: tahunLalu ? [
+      { label:`${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:5, maxBarThickness:24 },
+      { label:`${tahunLalu.tahun}`, data: tahunLalu.bulanan, backgroundColor:'#A9E8DD', borderRadius:5, maxBarThickness:24 }
+    ] : [
+      { label:`Aqiqah ${tahunIni.tahun}`, data: tahunIni.bulanan, backgroundColor:'#128A7B', borderRadius:6, maxBarThickness:38 }
+    ]},
+    options: chartOptions('angka', !!tahunLalu)
   }));
   aqCharts.push(new Chart(document.getElementById('chartAqTahunan'), {
     type:'bar',
@@ -921,7 +967,7 @@ function renderFR(){
 async function muatData(){
   if(!APPS_SCRIPT_URL){
     document.getElementById('syncLabel').textContent = 'Data Contoh (belum tersambung)';
-    populateYearSelect(); populateZisBulanSelect(); renderZis(); renderAqiqah(); renderUmroh();
+    populateYearSelect(); populateZisBulanSelect(); renderZis(); populateAqBulanSelect(); renderAqiqah(); renderUmroh();
     populateFrSelects(); renderFR();
     return;
   }
@@ -941,6 +987,7 @@ async function muatData(){
   populateYearSelect();
   populateZisBulanSelect();
   renderZis();
+  populateAqBulanSelect();
   renderAqiqah();
   renderUmroh();
   populateFrSelects();
