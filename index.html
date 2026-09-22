@@ -172,7 +172,7 @@
       <span id="frHeroPeriode" class="inline-block text-xs font-semibold text-white px-4 py-1.5 rounded-full bg-white/15"></span>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
       <div class="card p-4" style="border-top:3px solid var(--tosca-600)">
         <p class="text-xs font-bold" style="color:var(--slate)">TARGET (DOA)</p>
         <p class="text-[11px] mb-1" style="color:var(--slate-light)">bulan berjalan</p>
@@ -192,6 +192,11 @@
         <p class="text-xs font-bold" style="color:var(--slate)">PERINGKAT</p>
         <p class="text-[11px] mb-1" style="color:var(--slate-light)">dari 9 fundraiser</p>
         <p id="frKpiRank" class="tabular kpi-value font-extrabold">–</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--rose)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TARGET KWITANSI</p>
+        <p id="frKpiKwitansiSub" class="text-[11px] mb-1" style="color:var(--slate-light)">belum ada target</p>
+        <p id="frKpiKwitansi" class="tabular kpi-value font-extrabold">Rp 0</p>
       </div>
     </div>
 
@@ -214,7 +219,7 @@
     </div>
 
     <div class="card p-5 mt-5">
-      <h3 class="font-bold text-base">Target Kwitansi</h3>
+      <h3 class="font-bold text-base">Komposisi Kwitansi (Lama vs Baru)</h3>
       <p class="text-xs mb-3" style="color:var(--slate)">Data Lama &amp; Data Baru per fundraiser (diurutkan dari perolehan tertinggi) — arahkan kursor untuk lihat Target, Kekurangan &amp; Prosentase</p>
       <div class="chart-wrap" style="height:320px;"><canvas id="chartFrLamaBaru"></canvas></div>
     </div>
@@ -868,6 +873,20 @@ function renderFR(){
       document.getElementById('frKpiPersen').textContent = '0%'; document.getElementById('frKpiRank').textContent = '–';
     }
     document.getElementById('frTrenSub').textContent = `Target vs realisasi ${titleCase(namaTerpilih)} per bulan`;
+  }
+
+  // Kartu Target Kwitansi -- dari sumber data terpisah (FR_LAMABARU_DATA), tetap
+  // ikut filter nama yang sama: total semua orang, atau satu orang saja
+  if(namaTerpilih === '__semua__'){
+    const totalTargetK = FR_LAMABARU_DATA.data.reduce((s,d)=>s+(d.target||0),0);
+    document.getElementById('frKpiKwitansi').textContent = formatRp(totalTargetK);
+    document.getElementById('frKpiKwitansiSub').textContent = 'total 9 fundraiser';
+  } else {
+    const kwitansiOrang = FR_LAMABARU_DATA.data.find(d=>d.nama===namaTerpilih);
+    document.getElementById('frKpiKwitansi').textContent = formatRp(kwitansiOrang ? kwitansiOrang.target : 0);
+    const persenK = kwitansiOrang && kwitansiOrang.persen!==null && kwitansiOrang.persen!==undefined
+      ? kwitansiOrang.persen.toFixed(1)+'%' : 'belum ada target';
+    document.getElementById('frKpiKwitansiSub').textContent = persenK;
   }
 
   frCharts = destroyCharts(frCharts);
