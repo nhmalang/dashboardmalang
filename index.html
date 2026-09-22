@@ -173,15 +173,20 @@
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
-      <div class="card p-4" style="border-top:3px solid var(--tosca-600)">
-        <p class="text-xs font-bold" style="color:var(--slate)">TARGET (DOA)</p>
-        <p class="text-[11px] mb-1" style="color:var(--slate-light)">bulan berjalan</p>
-        <p id="frKpiTarget" class="tabular kpi-value font-extrabold">Rp 0</p>
-      </div>
+      <div class="card p-4" style="border-top:3px solid var(--rose)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TARGET KWITANSI</p>
+        <p id="frKpiKwitansiSub" class="text-[11px] mb-1" style="color:var(--slate-light)">belum ada target</p>
+        <p id="frKpiKwitansi" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>      
       <div class="card p-4" style="border-top:3px solid var(--slate-light)">
         <p class="text-xs font-bold" style="color:var(--slate)">REALISASI</p>
         <p class="text-[11px] mb-1" style="color:var(--slate-light)">bulan berjalan</p>
         <p id="frKpiRealisasi" class="tabular kpi-value font-extrabold">Rp 0</p>
+      </div>
+      <div class="card p-4" style="border-top:3px solid var(--tosca-600)">
+        <p class="text-xs font-bold" style="color:var(--slate)">TARGET (DOA)</p>
+        <p class="text-[11px] mb-1" style="color:var(--slate-light)">bulan berjalan</p>
+        <p id="frKpiTarget" class="tabular kpi-value font-extrabold">Rp 0</p>
       </div>
       <div class="card p-4" style="border-top:3px solid var(--gold-600)">
         <p class="text-xs font-bold" style="color:var(--slate)">CAPAIAN</p>
@@ -192,12 +197,7 @@
         <p class="text-xs font-bold" style="color:var(--slate)">PERINGKAT</p>
         <p class="text-[11px] mb-1" style="color:var(--slate-light)">dari 9 fundraiser</p>
         <p id="frKpiRank" class="tabular kpi-value font-extrabold">–</p>
-      </div>
-      <div class="card p-4" style="border-top:3px solid var(--rose)">
-        <p class="text-xs font-bold" style="color:var(--slate)">TARGET KWITANSI</p>
-        <p id="frKpiKwitansiSub" class="text-[11px] mb-1" style="color:var(--slate-light)">belum ada target</p>
-        <p id="frKpiKwitansi" class="tabular kpi-value font-extrabold">Rp 0</p>
-      </div>
+      </div>      
     </div>
 
     <div class="card p-5 mb-5">
@@ -879,8 +879,10 @@ function renderFR(){
   // ikut filter nama yang sama: total semua orang, atau satu orang saja
   if(namaTerpilih === '__semua__'){
     const totalTargetK = FR_LAMABARU_DATA.data.reduce((s,d)=>s+(d.target||0),0);
+    const totalRealisasiK = FR_LAMABARU_DATA.data.reduce((s,d)=>s+(d.total||0),0);
+    const persenTotalK = totalTargetK ? (totalRealisasiK/totalTargetK*100) : null;
     document.getElementById('frKpiKwitansi').textContent = formatRp(totalTargetK);
-    document.getElementById('frKpiKwitansiSub').textContent = 'total 9 fundraiser';
+    document.getElementById('frKpiKwitansiSub').textContent = persenTotalK!==null ? persenTotalK.toFixed(1)+'% dari target' : 'belum ada target';
   } else {
     const kwitansiOrang = FR_LAMABARU_DATA.data.find(d=>d.nama===namaTerpilih);
     document.getElementById('frKpiKwitansi').textContent = formatRp(kwitansiOrang ? kwitansiOrang.target : 0);
